@@ -1,0 +1,19 @@
+# Binaries
+server
+client
+quic-server
+*.exe
+
+# Logs
+*.log
+
+# TLS Certificates (Never commit these!)
+certs/
+*.crt
+*.key
+
+# Data storage (if you ever switch back to disk mode)
+data/
+
+# OS specific files
+.DS_Store
