@@ -16,3 +16,4 @@ data/files/*
 # IDE
 .vscode/
 .idea/
+*.log
