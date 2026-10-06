@@ -1,27 +1,49 @@
-# QUIC File Transfer (Direct Relay)
+# QUIC File Transfer
 
-A simple, memory-efficient QUIC-based file transfer application built with Go. 
-This operates as a **Direct Relay** server — it pipes files instantly from Sender to Receiver entirely in memory. Files are **never** stored on the server's disk, meaning you can host this securely on ephemeral serverless platforms or low-storage VPS droplets!
+A simple, practical QUIC-based file transfer application built with Go and quic-go.
+
+## Quick Start
+
+```bash
+# 1. Generate TLS certificates (required — QUIC mandates TLS 1.3)
+bash scripts/generate-certs.sh
+
+# 2. Build
+go build -o server ./cmd/server
+go build -o client ./cmd/client
+
+# 3. Run the server
+./server
+
+# 4. In another terminal, run the client
+./client
+```
 
 ## Features
 
-- **Direct Peer-to-Peer Relay:** Streams files live from uploader to downloader.
-- **Memory Efficient:** Uses `io.Copy` limits; handles 100GB+ files effortlessly with zero disk usage.
-- **SHA-256 integrity:** Files are hashed end-to-end to verify integrity.
-- **Authentication:** Secure your server with a simple `QUIC_TOKEN`.
-- **Dockerized:** Ready for production deployment.
+- **Upload, Download, List, Delete** files using a lightweight binary protocol over QUIC.
+- **Web UI** and REST API served concurrently on TCP :8443.
+- **Resume support**: Interrupted uploads can be resumed seamlessly.
+- **SHA-256 integrity**: Files are hashed during transfer to verify integrity.
+- **Authentication**: Secure your server with a simple `QUIC_TOKEN`.
+- **Security**: Built-in path traversal protection.
+- **Dockerized**: Ready for production deployment.
 
 ## Project Structure
 
 ```text
 quic-transfer/
 ├── cmd/
-│   ├── server/main.go         # QUIC Relay Server
-│   └── client/main.go         # CLI client
+│   ├── server/
+│   │   ├── main.go            # QUIC + HTTPS server
+│   │   └── web/               # Embedded Web UI
+│   └── client/
+│       └── main.go            # CLI client
 ├── internal/
 │   ├── protocol/protocol.go   # Binary wire format
-│   └── relay/relay.go         # In-memory stream matching
+│   └── filemanager/           # Safe file I/O
 ├── certs/                     # TLS certs
+├── data/files/                # File storage
 ├── scripts/generate-certs.sh
 └── Dockerfile
 ```
@@ -35,29 +57,41 @@ export QUIC_TOKEN="my-secret-token"
 ./server
 ```
 
-The server listens on **UDP :4433**.
+The server listens on:
+- **UDP :4433** - QUIC binary protocol (for the CLI)
+- **TCP :8443** - HTTPS Web UI & REST API
 
-## Using the Client
+### Using the Web UI
 
-Because this is a live relay, both the sender and receiver must be online.
+Open your browser and navigate to: `https://localhost:8443`.
+*Note: If using self-signed certificates, you will need to bypass your browser's security warning.*
+If you started the server with `QUIC_TOKEN`, append it to the URL: `https://localhost:8443/?token=my-secret-token`
 
-**1. Sender starts upload (and waits):**
+### Using the CLI Client
+
+Set the token in your environment and use the client:
+
 ```bash
 export QUIC_TOKEN="my-secret-token"
+
+# Upload a file (supports resuming if interrupted!)
 ./client upload large_file.bin
-```
 
-**2. Receiver starts download (starts transfer instantly):**
-```bash
-export QUIC_TOKEN="my-secret-token"
+# Download a file
 ./client download large_file.bin
+
+# List files
+./client list
+
+# Delete a file
+./client delete large_file.bin
 ```
 
 ## Running with Docker
 
 ```bash
 docker build -t quic-transfer .
-docker run -p 4433:4433/udp -e QUIC_TOKEN="my-secret" quic-transfer
+docker run -p 4433:4433/udp -p 8443:8443/tcp quic-transfer
 ```
 
 ## License

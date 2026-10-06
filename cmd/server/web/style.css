@@ -1,0 +1,348 @@
+/* QUIC File Transfer — Web UI Styles */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-hover: #222632;
+    --border: #2a2e3a;
+    --text: #e4e6eb;
+    --text-muted: #8b8fa3;
+    --accent: #4f8cff;
+    --accent-hover: #3a7bff;
+    --danger: #e5484d;
+    --danger-hover: #d13438;
+    --success: #30a46c;
+    --radius: 8px;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Upload Section */
+.upload-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.upload-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.file-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    transition: border-color 0.15s, color 0.15s;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.file-label:hover {
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.file-label.has-file {
+    color: var(--text);
+    border-style: solid;
+    border-color: var(--accent);
+}
+
+.file-icon {
+    flex-shrink: 0;
+}
+
+button, .btn-danger {
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+#upload-btn {
+    background: var(--accent);
+    color: white;
+}
+
+#upload-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+#upload-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Progress */
+.progress-area {
+    margin-top: 1.25rem;
+}
+
+.progress-area.hidden {
+    display: none;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8125rem;
+    margin-bottom: 0.5rem;
+}
+
+#progress-filename {
+    color: var(--text);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 1rem;
+}
+
+#progress-percent {
+    color: var(--accent);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.2s ease;
+}
+
+.progress-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.375rem;
+}
+
+/* Files Section */
+.files-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+
+.files-section h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.files-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-row {
+    display: flex;
+    align-items: center;
+    padding: 0.625rem 0.75rem;
+    border-radius: 6px;
+    transition: background 0.1s;
+}
+
+.file-row:hover {
+    background: var(--surface-hover);
+}
+
+.file-row + .file-row {
+    border-top: 1px solid var(--border);
+}
+
+.file-name {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 1rem;
+}
+
+.file-size {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    min-width: 5rem;
+    text-align: right;
+    margin-right: 1rem;
+}
+
+.file-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.btn-download, .btn-delete {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-download:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-delete:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    padding: 2rem 0;
+}
+
+.loading {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    padding: 1rem 0;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    max-width: 360px;
+    width: 90%;
+}
+
+.modal-content p {
+    margin-bottom: 1.25rem;
+    font-size: 0.9375rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: var(--danger-hover);
+}
+
+#confirm-no {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+#confirm-no:hover {
+    background: var(--surface-hover);
+}
+
+/* Status messages */
+.status-success {
+    color: var(--success);
+    font-size: 0.8125rem;
+    margin-top: 0.75rem;
+}
+
+.status-error {
+    color: var(--danger);
+    font-size: 0.8125rem;
+    margin-top: 0.75rem;
+}

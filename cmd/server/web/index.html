@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUIC File Transfer</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QUIC File Transfer</h1>
+            <p class="subtitle">Upload &amp; download files over QUIC</p>
+            <div style="margin-top: 1rem;">
+                <input type="password" id="auth-token" placeholder="Enter QUIC_TOKEN (if required)" style="width: 100%; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text);">
+            </div>
+        </header>
+
+        <section class="upload-section">
+            <div class="upload-controls">
+                <label for="file-input" class="file-label" id="file-label">
+                    <span class="file-icon">📁</span>
+                    <span id="file-name-display">Select a file</span>
+                </label>
+                <input type="file" id="file-input">
+                <button id="upload-btn" disabled>Upload</button>
+            </div>
+
+            <div id="progress-area" class="progress-area hidden">
+                <div class="progress-info">
+                    <span id="progress-filename"></span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-details">
+                    <span id="progress-transferred"></span>
+                    <span id="progress-speed"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="files-section">
+            <h2>Files</h2>
+            <div id="files-list" class="files-list">
+                <p class="loading">Loading...</p>
+            </div>
+        </section>
+    </div>
+
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <p id="confirm-message"></p>
+            <div class="modal-actions">
+                <button id="confirm-yes" class="btn-danger">Delete</button>
+                <button id="confirm-no">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

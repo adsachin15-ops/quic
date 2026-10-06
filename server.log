@@ -1,0 +1,10 @@
+2026/10/06 12:32:48 [INFO] Server starting in DIRECT RELAY mode.
+2026/10/06 12:32:48 [INFO] QUIC server listening on UDP :4433
+2026/10/06 12:32:49 [INFO] QUIC client connected: 127.0.0.1:39343
+2026/10/06 12:32:49 [INFO] Relay Upload waiting: relay_test.txt (29 B)
+2026/10/06 12:32:50 [INFO] QUIC client connected: 127.0.0.1:46549
+2026/10/06 12:32:50 [INFO] Relay Download requested: relay_test.txt
+2026/10/06 12:32:50 [INFO] Relay Download completed: relay_test.txt (61 B)
+2026/10/06 12:32:50 [INFO] Relay Upload complete: relay_test.txt
+2026/10/06 12:32:50 [INFO] QUIC client disconnected: 127.0.0.1:39343
+2026/10/06 12:32:50 [INFO] QUIC client disconnected: 127.0.0.1:46549

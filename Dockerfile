@@ -24,8 +24,14 @@ COPY --from=builder /app/quic-server .
 # Copy TLS certs (in production, mount these via volume)
 COPY --from=builder /app/certs ./certs
 
-# Expose QUIC UDP port
+# Create storage directory
+RUN mkdir -p /app/data/files
+
+# Expose ports
+# UDP 4433: QUIC binary protocol
+# TCP 8443: HTTPS Web UI & REST API
 EXPOSE 4433/udp
+EXPOSE 8443/tcp
 
 # Run the server
 CMD ["./quic-server"]

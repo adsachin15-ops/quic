@@ -1,19 +1,18 @@
 # Binaries
-server
-client
-quic-server
-*.exe
+/server
+/client
+/quic-transfer
 
-# Logs
-*.log
-
-# TLS Certificates (Never commit these!)
+# TLS certificates (sensitive)
 certs/
-*.crt
-*.key
 
-# Data storage (if you ever switch back to disk mode)
-data/
+# Uploaded files
+data/files/*
+!data/files/.gitkeep
 
-# OS specific files
-.DS_Store
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
