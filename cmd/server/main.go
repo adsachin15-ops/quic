@@ -46,14 +46,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize web filesystem: %v", err)
 	}
-	http.Handle("/", http.FileServer(http.FS(subFS)))
-	http.HandleFunc("/api/files", apiAuth(handleWebList))
-	http.HandleFunc("/api/upload", apiAuth(handleWebUpload))
-	http.HandleFunc("/api/download/", apiAuth(handleWebDownload))
+
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.FS(subFS)))
+	mux.HandleFunc("/api/files", apiAuth(handleWebList))
+	mux.HandleFunc("/api/upload", apiAuth(handleWebUpload))
+	mux.HandleFunc("/api/download/", apiAuth(handleWebDownload))
+
+	srv := &http.Server{
+		Addr:    ":8443",
+		Handler: securityHeaders(mux),
+	}
 
 	go func() {
 		log.Printf("[INFO] Web server listening on https://localhost:8443")
-		err := http.ListenAndServeTLS(":8443", "certs/server.crt", "certs/server.key", nil)
+		err := srv.ListenAndServeTLS("certs/server.crt", "certs/server.key")
 		if err != nil {
 			log.Fatalf("Web server failed: %v", err)
 		}
@@ -95,29 +102,60 @@ func apiAuth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://api.qrserver.com; connect-src 'self';")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func sanitizeFilename(name string) string {
+	clean := filepath.Base(filepath.Clean(name))
+	clean = strings.Map(func(r rune) rune {
+		if r < 32 || r == 127 || r == '/' || r == '\\' {
+			return '_'
+		}
+		return r
+	}, clean)
+	clean = strings.TrimSpace(clean)
+	if clean == "" || clean == "." {
+		return "download"
+	}
+	return clean
+}
+
 func handleWebUpload(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	// Protect against unbounded uploads (max 5 GB)
+	r.Body = http.MaxBytesReader(w, r.Body, 5<<30)
+
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "Invalid file", http.StatusBadRequest)
+		http.Error(w, "Invalid or oversized file (max 5GB)", http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
 
-	log.Printf("[INFO] Web upload started (waiting for downloader): %s (%d bytes)", header.Filename, header.Size)
+	safeFilename := sanitizeFilename(header.Filename)
+	log.Printf("[INFO] Web upload started (waiting for downloader): %s (%d bytes)", safeFilename, header.Size)
 
 	// Block here until a downloader joins
-	err = rm.Host(header.Filename, uint64(header.Size), file)
+	err = rm.Host(safeFilename, uint64(header.Size), file)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("[INFO] Web upload completed: %s", header.Filename)
+	log.Printf("[INFO] Web upload completed: %s", safeFilename)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -127,7 +165,8 @@ func handleWebDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := strings.TrimPrefix(r.URL.Path, "/api/download/")
+	rawFilename := strings.TrimPrefix(r.URL.Path, "/api/download/")
+	filename := sanitizeFilename(rawFilename)
 	if filename == "" {
 		http.Error(w, "Missing filename", http.StatusBadRequest)
 		return
@@ -194,6 +233,8 @@ func handleStream(stream *quic.Stream) {
 		protocol.WriteResponse(stream, protocol.StatusError, "Unauthorized")
 		return
 	}
+
+	header.Filename = sanitizeFilename(header.Filename)
 
 	switch header.Command {
 	case protocol.CmdUpload:
