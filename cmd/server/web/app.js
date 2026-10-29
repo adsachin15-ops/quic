@@ -1,6 +1,6 @@
-// QUIC Direct Relay — Client Application
+// QUIC Direct Relay — High-Performance Client Interface
 
-const API = ''; // Same origin
+const API = ''; // Same origin relative paths
 
 // ── State ──────────────────────────────────────────
 let selectedFile = null;
@@ -14,6 +14,7 @@ const browseBtn = document.getElementById('browse-btn');
 const tokenToggle = document.getElementById('token-toggle');
 const tokenContainer = document.getElementById('token-container');
 const tokenInput = document.getElementById('auth-token');
+const saveTokenBtn = document.getElementById('save-token-btn');
 
 // Upload States
 const uploadIdleState = document.getElementById('upload-idle-state');
@@ -32,9 +33,11 @@ const progressPercent = document.getElementById('progress-percent');
 const progressSpeed = document.getElementById('progress-speed');
 const shareUrlInput = document.getElementById('share-url-input');
 const copyShareBtn = document.getElementById('copy-share-btn');
+const copyBtnIcon = document.getElementById('copy-btn-icon');
+const copyBtnText = document.getElementById('copy-btn-text');
 const qrShareBtn = document.getElementById('qr-share-btn');
 
-// Incoming File Banner
+// Incoming File Hero
 const incomingCard = document.getElementById('incoming-card');
 const incomingFilenameEl = document.getElementById('incoming-filename');
 const incomingSizeEl = document.getElementById('incoming-size');
@@ -53,6 +56,7 @@ const qrFileLabel = document.getElementById('qr-file-label');
 
 // Toast
 const toast = document.getElementById('toast');
+const toastMessage = document.getElementById('toast-message');
 
 // ── Initialization ─────────────────────────────────
 
@@ -79,7 +83,7 @@ function initUrlParams() {
 function showIncomingCard(filename) {
     incomingCard.classList.remove('hidden');
     incomingFilenameEl.textContent = filename;
-    incomingSizeEl.textContent = 'Ready to stream directly from host';
+    incomingSizeEl.textContent = 'Host is broadcasting this file live in RAM';
 }
 
 // ── Event Listeners ────────────────────────────────
@@ -93,8 +97,16 @@ function initEventListeners() {
         }
     });
 
-    tokenInput.addEventListener('input', () => {
+    saveTokenBtn.addEventListener('click', () => {
+        showToast('Token applied for requests');
+        tokenContainer.classList.add('hidden');
         loadFiles();
+    });
+
+    tokenInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            saveTokenBtn.click();
+        }
     });
 
     // File selection
@@ -123,7 +135,7 @@ function initEventListeners() {
 
     // Share buttons in active card
     copyShareBtn.addEventListener('click', () => {
-        copyToClipboard(shareUrlInput.value);
+        copyToClipboard(shareUrlInput.value, copyBtnIcon, copyBtnText);
     });
 
     qrShareBtn.addEventListener('click', () => {
@@ -187,8 +199,8 @@ function startHosting(file) {
     uploadSelectedState.classList.add('hidden');
     uploadActiveState.classList.remove('hidden');
 
-    activeStatusTitle.textContent = 'Buffering into RAM...';
-    activeStatusDesc.textContent = 'Connecting to relay stream...';
+    activeStatusTitle.textContent = 'Buffering stream into memory...';
+    activeStatusDesc.textContent = 'Establishing direct QUIC relay session...';
     progressFill.style.width = '0%';
     progressPercent.textContent = '0%';
 
@@ -212,11 +224,11 @@ function startHosting(file) {
 
             progressFill.style.width = pct + '%';
             progressPercent.textContent = pct.toFixed(0) + '%';
-            progressSpeed.textContent = `${formatSize(e.loaded)} / ${formatSize(e.total)} (${formatSize(speed)}/s)`;
+            progressSpeed.textContent = `${formatSize(e.loaded)} / ${formatSize(e.total)} • ${formatSize(speed)}/s`;
 
             if (pct >= 99) {
-                activeStatusTitle.textContent = 'Hosting in RAM (Waiting for peer)';
-                activeStatusDesc.textContent = 'Share the link or QR code with your recipient to begin download.';
+                activeStatusTitle.textContent = '📡 Broadcasting live in RAM';
+                activeStatusDesc.textContent = 'Awaiting peer connection. Share the link or QR code below.';
             }
         }
     });
@@ -225,27 +237,27 @@ function startHosting(file) {
         if (xhr.status === 200) {
             activeStatusTitle.textContent = '✓ Transfer Complete!';
             activeStatusDesc.textContent = 'The recipient has successfully received the entire file.';
-            progressFill.style.background = 'var(--success)';
+            progressFill.style.background = 'var(--brand-emerald)';
             progressPercent.textContent = '100%';
-            progressSpeed.textContent = 'Delivered';
-            showToast('✓ File successfully delivered to peer!');
+            progressSpeed.textContent = 'Delivered to peer';
+            showToast('✓ File successfully transferred!');
 
             setTimeout(() => {
                 resetUploadState();
                 loadFiles();
             }, 6000);
         } else {
-            activeStatusTitle.textContent = 'Transfer Error';
-            activeStatusDesc.textContent = xhr.responseText || 'Connection interrupted';
-            progressFill.style.background = 'var(--danger)';
+            activeStatusTitle.textContent = 'Transmission Error';
+            activeStatusDesc.textContent = xhr.responseText || 'Relay was interrupted.';
+            progressFill.style.background = 'var(--brand-rose)';
             setTimeout(resetUploadState, 6000);
         }
     });
 
     xhr.addEventListener('error', () => {
-        activeStatusTitle.textContent = 'Connection Failed';
-        activeStatusDesc.textContent = 'Could not establish connection to the relay server.';
-        progressFill.style.background = 'var(--danger)';
+        activeStatusTitle.textContent = 'Connection Interrupted';
+        activeStatusDesc.textContent = 'Lost connection to relay server.';
+        progressFill.style.background = 'var(--brand-rose)';
         setTimeout(resetUploadState, 6000);
     });
 
@@ -262,7 +274,7 @@ function startHosting(file) {
     xhr.send(formData);
 
     // Refresh active list so uploader sees it listed
-    setTimeout(loadFiles, 800);
+    setTimeout(loadFiles, 600);
 }
 
 function resetUploadState() {
@@ -278,7 +290,7 @@ function resetUploadState() {
     uploadActiveState.classList.add('hidden');
 
     progressFill.style.width = '0%';
-    progressFill.style.background = 'var(--accent-gradient)';
+    progressFill.style.background = 'var(--gradient-brand)';
     progressPercent.textContent = '0%';
     progressSpeed.textContent = '';
 }
@@ -301,38 +313,56 @@ async function loadFiles() {
         renderFiles(files);
     } catch (err) {
         if (err.message === 'Unauthorized') {
-            filesList.innerHTML = '<p class="empty-state" style="color: var(--danger)">Unauthorized — Enter the correct QUIC_TOKEN above.</p>';
+            filesList.innerHTML = '<div class="empty-state-modern"><p style="color: var(--brand-rose)">Unauthorized — Enter your access token in the navigation bar.</p></div>';
         }
     }
 }
 
 function renderFiles(files) {
     if (!files || files.length === 0) {
-        filesCount.textContent = '0 active';
-        filesList.innerHTML = '<p class="empty-state">No files currently being hosted. Upload a file above to begin relaying.</p>';
+        filesCount.textContent = '0 Live';
+        filesList.innerHTML = `
+            <div class="empty-state-modern">
+                <div class="empty-icon-wrap">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                        <line x1="3" x2="21" y1="9" y2="9"/>
+                        <line x1="9" x2="9" y1="21" y2="9"/>
+                    </svg>
+                </div>
+                <h4>No active relays right now</h4>
+                <p>Drop a file above to broadcast an instant transmission stream.</p>
+            </div>
+        `;
         return;
     }
 
-    filesCount.textContent = `${files.length} active`;
+    filesCount.textContent = `${files.length} Live`;
 
     filesList.innerHTML = files.map(f => {
         const icon = getFileIcon(f.name);
         const shareUrl = buildShareUrl(f.name);
 
         return `
-            <div class="file-item">
-                <div class="file-left">
-                    <span class="file-icon">${icon}</span>
-                    <div class="file-title-wrap">
-                        <span class="file-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
-                        <span class="file-badge-ram">Streaming in RAM</span>
+            <div class="file-card-item">
+                <div class="file-info-group">
+                    <div class="file-symbol-badge">${icon}</div>
+                    <div class="file-text-col">
+                        <span class="file-name-text" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
+                        <span class="file-subtext">Ephemeral Stream In RAM</span>
                     </div>
                 </div>
-                <div class="file-right">
-                    <span class="file-size">${formatSize(f.size)}</span>
-                    <button type="button" class="btn-primary" onclick="downloadFile('${escapeJs(f.name)}')">↓ Download</button>
-                    <button type="button" class="btn-secondary" onclick="copyToClipboard('${escapeJs(shareUrl)}')">📋 Copy</button>
-                    <button type="button" class="btn-secondary" onclick="openQrModal('${escapeJs(f.name)}', '${escapeJs(shareUrl)}')">📱 QR</button>
+                <div class="file-actions-group">
+                    <span class="file-size-tag">${formatSize(f.size)}</span>
+                    <button type="button" class="btn-stream-dl" onclick="downloadFile('${escapeJs(f.name)}')">
+                        <span>↓ Download</span>
+                    </button>
+                    <button type="button" class="btn-sub-action" onclick="copyToClipboard('${escapeJs(shareUrl)}')">
+                        <span>📋 Copy Link</span>
+                    </button>
+                    <button type="button" class="btn-sub-action" onclick="openQrModal('${escapeJs(f.name)}', '${escapeJs(shareUrl)}')">
+                        <span>📱 QR</span>
+                    </button>
                 </div>
             </div>
         `;
@@ -348,7 +378,7 @@ function downloadFile(filename) {
         url += '?token=' + encodeURIComponent(token);
     }
 
-    showToast(`Starting download: ${filename}`);
+    showToast(`Streaming ${filename}...`);
 
     const a = document.createElement('a');
     a.href = url;
@@ -357,11 +387,10 @@ function downloadFile(filename) {
     a.click();
     document.body.removeChild(a);
 
-    // Refresh list shortly after download starts
-    setTimeout(loadFiles, 1500);
+    setTimeout(loadFiles, 1200);
 }
 
-// ── QR Code & Share Helpers ────────────────────────
+// ── Share & QR Helpers ─────────────────────────────
 
 function buildShareUrl(filename) {
     const loc = window.location;
@@ -379,28 +408,39 @@ function closeQrModal() {
     qrImage.src = '';
 }
 
-function copyToClipboard(text) {
+function copyToClipboard(text, iconEl, textEl) {
+    const doFeedback = () => {
+        showToast('📋 Link copied to clipboard!');
+        if (textEl) {
+            const original = textEl.textContent;
+            textEl.textContent = 'Copied!';
+            if (iconEl) iconEl.textContent = '✓';
+            setTimeout(() => {
+                textEl.textContent = original;
+                if (iconEl) iconEl.textContent = '📋';
+            }, 2000);
+        }
+    };
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToast('📋 Link copied to clipboard!');
-        }).catch(() => fallbackCopy(text));
+        navigator.clipboard.writeText(text).then(doFeedback).catch(() => fallbackCopy(text, doFeedback));
     } else {
-        fallbackCopy(text);
+        fallbackCopy(text, doFeedback);
     }
 }
 
-function fallbackCopy(text) {
+function fallbackCopy(text, cb) {
     const temp = document.createElement('input');
     temp.value = text;
     document.body.appendChild(temp);
     temp.select();
     document.execCommand('copy');
     document.body.removeChild(temp);
-    showToast('📋 Link copied to clipboard!');
+    if (cb) cb();
 }
 
 function showToast(message) {
-    toast.textContent = message;
+    toastMessage.textContent = message;
     toast.classList.remove('hidden');
     setTimeout(() => {
         toast.classList.add('hidden');
@@ -421,8 +461,8 @@ function getFileIcon(name) {
     const ext = name.split('.').pop().toLowerCase();
     const map = {
         png: '🖼️', jpg: '🖼️', jpeg: '🖼️', gif: '🖼️', webp: '🖼️', svg: '🖼️',
-        mp4: '🎬', mov: '🎬', mkv: '🎬', avi: '🎬',
-        mp3: '🎵', wav: '🎵', flac: '🎵',
+        mp4: '🎬', mov: '🎬', mkv: '🎬', avi: '🎬', webm: '🎬',
+        mp3: '🎵', wav: '🎵', flac: '🎵', aac: '🎵',
         pdf: '📕', doc: '📘', docx: '📘', txt: '📄', md: '📝',
         zip: '🗜️', tar: '🗜️', gz: '🗜️', '7z': '🗜️', rar: '🗜️',
         iso: '💿', exe: '⚙️', dmg: '💿', deb: '📦', rpm: '📦',
