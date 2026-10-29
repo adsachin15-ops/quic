@@ -157,24 +157,34 @@ func ReadHeader(r io.Reader) (Header, error) {
 	return h, nil
 }
 
-// WriteResponse writes a status + message to w.
+// WriteResponse writes a status + length-prefixed message to w.
 func WriteResponse(w io.Writer, status byte, msg string) error {
 	if _, err := w.Write([]byte{status}); err != nil {
 		return err
 	}
-	_, err := w.Write([]byte(msg))
+	msgBytes := []byte(msg)
+	if err := binary.Write(w, binary.BigEndian, uint16(len(msgBytes))); err != nil {
+		return err
+	}
+	_, err := w.Write(msgBytes)
 	return err
 }
 
-// ReadResponse reads a status + message from r.
+// ReadResponse reads a status + length-prefixed message from r.
 func ReadResponse(r io.Reader) (byte, string, error) {
 	statusBuf := make([]byte, 1)
 	if _, err := io.ReadFull(r, statusBuf); err != nil {
 		return 0, "", fmt.Errorf("read status: %w", err)
 	}
-	msg, err := io.ReadAll(r)
-	if err != nil {
-		return 0, "", fmt.Errorf("read message: %w", err)
+	var msgLen uint16
+	if err := binary.Read(r, binary.BigEndian, &msgLen); err != nil {
+		return statusBuf[0], "", fmt.Errorf("read msg length: %w", err)
 	}
-	return statusBuf[0], string(msg), nil
+	msgBuf := make([]byte, msgLen)
+	if msgLen > 0 {
+		if _, err := io.ReadFull(r, msgBuf); err != nil {
+			return statusBuf[0], "", fmt.Errorf("read msg: %w", err)
+		}
+	}
+	return statusBuf[0], string(msgBuf), nil
 }

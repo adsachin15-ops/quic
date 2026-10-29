@@ -139,7 +139,7 @@ async function loadFiles() {
 
 function renderFiles(files) {
     if (!files || files.length === 0) {
-        filesList.innerHTML = '<p class="empty-state">No files uploaded yet</p>';
+        filesList.innerHTML = '<p class="empty-state">No active files waiting for transfer. Host/upload a file to begin relay.</p>';
         return;
     }
 
@@ -149,7 +149,6 @@ function renderFiles(files) {
             <span class="file-size">${formatSize(f.size)}</span>
             <div class="file-actions">
                 <button class="btn-download" onclick="downloadFile('${escapeJs(f.name)}')">↓ Download</button>
-                <button class="btn-delete" onclick="confirmDelete('${escapeJs(f.name)}')">Delete</button>
             </div>
         </div>
     `).join('');
@@ -251,3 +250,4 @@ tokenInput.addEventListener('input', () => {
 });
 
 loadFiles();
+setInterval(loadFiles, 3000);
