@@ -59,9 +59,13 @@ func main() {
 		uploadFile(conn, args[1], token)
 	case "download":
 		if len(args) < 2 {
-			log.Fatal("Usage: client download <filename>")
+			log.Fatal("Usage: client download <filename> [destination_path]")
 		}
-		downloadFile(conn, args[1], token)
+		destPath := args[1]
+		if len(args) >= 3 {
+			destPath = args[2]
+		}
+		downloadFile(conn, args[1], destPath, token)
 	default:
 		log.Fatalf("Unknown command: %s", command)
 	}
@@ -140,7 +144,7 @@ func uploadFile(conn *quic.Conn, filename string, token string) {
 	fmt.Printf("\n✓ OK: %s (%s) [%s] (%.1fs, %s/s)\n", baseName, formatSize(uint64(written)), hashStatus, duration, formatSize(uint64(speed)))
 }
 
-func downloadFile(conn *quic.Conn, filename string, token string) {
+func downloadFile(conn *quic.Conn, filename string, destPath string, token string) {
 	stream, err := conn.OpenStreamSync(context.Background())
 	if err != nil {
 		log.Fatalf("Failed to open stream: %v", err)
@@ -172,9 +176,9 @@ func downloadFile(conn *quic.Conn, filename string, token string) {
 		log.Fatalf("Invalid file size from server: %s", fileSizeStr)
 	}
 
-	fmt.Printf("Joining Relay: %s (%s)\n", filename, formatSize(fileSize))
+	fmt.Printf("Joining Relay: %s (%s) -> saving to %s\n", filename, formatSize(fileSize), destPath)
 
-	f, err := os.Create(filename)
+	f, err := os.Create(destPath)
 	if err != nil {
 		log.Fatalf("Failed to create local file: %v", err)
 	}
@@ -197,7 +201,7 @@ func downloadFile(conn *quic.Conn, filename string, token string) {
 	}
 	speed := float64(written) / duration
 
-	fmt.Printf("\n✓ Downloaded: %s (%s, %.1fs, %s/s)\n", filename, formatSize(uint64(written)), duration, formatSize(uint64(speed)))
+	fmt.Printf("\n✓ Downloaded: %s -> %s (%s, %.1fs, %s/s)\n", filename, destPath, formatSize(uint64(written)), duration, formatSize(uint64(speed)))
 }
 
 func formatSize(bytes uint64) string {
