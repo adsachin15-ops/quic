@@ -3,61 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUIC File Transfer</title>
+    <title>QUIC Direct Relay — Fast, Zero-Storage File Sharing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+    <div class="glow-bg"></div>
+
     <div class="container">
+        <!-- Header -->
         <header>
-            <h1>QUIC File Transfer</h1>
-            <p class="subtitle">Upload &amp; download files over QUIC</p>
-            <div style="margin-top: 1rem;">
-                <input type="password" id="auth-token" placeholder="Enter QUIC_TOKEN (if required)" style="width: 100%; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text);">
+            <div class="badge-live">
+                <span class="live-dot"></span>
+                <span>In-Memory QUIC Relay Active</span>
+            </div>
+            <h1>QUIC Direct Relay</h1>
+            <p class="subtitle">Secure, zero-storage peer-to-peer file transfer. Data streams directly through RAM without saving to server disk.</p>
+            
+            <div class="token-toggle-wrap">
+                <button type="button" id="token-toggle" class="btn-text">🔒 Optional Token Access</button>
+                <div id="token-container" class="token-container hidden">
+                    <input type="password" id="auth-token" placeholder="Enter QUIC_TOKEN (if server requires it)" class="token-input">
+                </div>
             </div>
         </header>
 
-        <section class="upload-section">
-            <div class="upload-controls">
-                <label for="file-input" class="file-label" id="file-label">
-                    <span class="file-icon">📁</span>
-                    <span id="file-name-display">Select a file</span>
-                </label>
-                <input type="file" id="file-input">
-                <button id="upload-btn" disabled>Upload</button>
+        <!-- Incoming File Banner (Active when visiting ?file=filename) -->
+        <div id="incoming-card" class="card incoming-card hidden">
+            <div class="incoming-header">
+                <div class="incoming-icon">📦</div>
+                <div class="incoming-details">
+                    <span class="incoming-label">Incoming File Ready</span>
+                    <h2 id="incoming-filename" class="incoming-name">file.zip</h2>
+                    <p id="incoming-size" class="incoming-size">0 MB</p>
+                </div>
+            </div>
+            <button type="button" id="incoming-download-btn" class="btn-primary btn-large">↓ Download Now</button>
+        </div>
+
+        <!-- Upload & Hosting Section -->
+        <section class="card upload-card" id="drop-zone">
+            <input type="file" id="file-input" class="hidden-input">
+            
+            <!-- Idle / Drop State -->
+            <div id="upload-idle-state" class="upload-dropzone">
+                <div class="upload-icon-circle">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <h3>Drag &amp; drop a file here</h3>
+                <p class="text-muted">or choose from your device to host a direct stream</p>
+                <button type="button" id="browse-btn" class="btn-secondary">Browse File</button>
             </div>
 
-            <div id="progress-area" class="progress-area hidden">
-                <div class="progress-info">
-                    <span id="progress-filename"></span>
-                    <span id="progress-percent">0%</span>
+            <!-- Upload Ready / Selected State -->
+            <div id="upload-selected-state" class="upload-selected hidden">
+                <div class="file-summary">
+                    <span class="file-icon-large">📄</span>
+                    <div class="file-info-text">
+                        <span id="selected-name" class="selected-name">filename.ext</span>
+                        <span id="selected-size" class="selected-size">0 KB</span>
+                    </div>
+                    <button type="button" id="cancel-selection-btn" class="btn-icon" title="Choose another file">✕</button>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
+                <button type="button" id="start-upload-btn" class="btn-primary btn-block">Host File in Relay</button>
+            </div>
+
+            <!-- Active Hosting / Transferring State -->
+            <div id="upload-active-state" class="upload-active hidden">
+                <div class="active-status-header">
+                    <div class="spinner"></div>
+                    <div>
+                        <h4 id="active-status-title">Hosting in RAM</h4>
+                        <p id="active-status-desc" class="text-muted">Waiting for recipient to connect and download...</p>
+                    </div>
                 </div>
-                <div class="progress-details">
-                    <span id="progress-transferred"></span>
-                    <span id="progress-speed"></span>
+
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div class="progress-meta">
+                        <span id="progress-percent">0%</span>
+                        <span id="progress-speed"></span>
+                    </div>
+                </div>
+
+                <!-- Share Link Box -->
+                <div class="share-box">
+                    <label class="share-label">Share link with recipient:</label>
+                    <div class="share-input-group">
+                        <input type="text" id="share-url-input" readonly class="share-input">
+                        <button type="button" id="copy-share-btn" class="btn-secondary">📋 Copy</button>
+                        <button type="button" id="qr-share-btn" class="btn-secondary">📱 QR</button>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="files-section">
-            <h2>Files</h2>
+        <!-- Active Files Section -->
+        <section class="card files-card">
+            <div class="section-header">
+                <h2>Active Files Waiting in RAM</h2>
+                <span id="files-count" class="badge">0 active</span>
+            </div>
             <div id="files-list" class="files-list">
-                <p class="loading">Loading...</p>
+                <p class="empty-state">No files currently being hosted. Upload a file above to begin relaying.</p>
             </div>
         </section>
     </div>
 
-    <div id="confirm-modal" class="modal hidden">
+    <!-- QR Code Modal -->
+    <div id="qr-modal" class="modal hidden">
+        <div class="modal-backdrop" id="qr-modal-backdrop"></div>
         <div class="modal-content">
-            <p id="confirm-message"></p>
-            <div class="modal-actions">
-                <button id="confirm-yes" class="btn-danger">Delete</button>
-                <button id="confirm-no">Cancel</button>
+            <div class="modal-header">
+                <h3>Scan to Download on Mobile</h3>
+                <button type="button" id="qr-close-btn" class="btn-icon">✕</button>
             </div>
+            <p id="qr-file-label" class="modal-file-label">filename</p>
+            <div class="qr-image-wrap">
+                <img id="qr-image" src="" alt="QR Code">
+            </div>
+            <p class="modal-tip">Point your phone camera at this QR code to download directly.</p>
         </div>
     </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
 
     <script src="/app.js"></script>
 </body>
