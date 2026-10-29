@@ -16,8 +16,8 @@ import (
 	"strings"
 
 	"github.com/quic-go/quic-go"
-	"quic-transfer/internal/protocol"
-	"quic-transfer/internal/relay"
+	"quicadd/internal/protocol"
+	"quicadd/internal/relay"
 )
 
 //go:embed web/*
@@ -39,7 +39,7 @@ func main() {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
-	log.Printf("[INFO] QUIC Direct Relay server listening on UDP :4433")
+	log.Printf("[INFO] quicadd Direct Relay server listening on UDP :4433")
 
 	// 2. Setup Web Server
 	subFS, err := fs.Sub(webFS, "web")
@@ -59,7 +59,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("[INFO] Web server listening on https://localhost:8443")
+		log.Printf("[INFO] quicadd Web server listening on https://localhost:8443")
 		err := srv.ListenAndServeTLS("certs/server.crt", "certs/server.key")
 		if err != nil {
 			log.Fatalf("Web server failed: %v", err)
@@ -315,6 +315,6 @@ func generateTLSConfig() *tls.Config {
 	}
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		NextProtos:   []string{"quic-transfer"},
+		NextProtos:   []string{"quicadd", "quic-transfer"},
 	}
 }

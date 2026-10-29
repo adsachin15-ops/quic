@@ -14,19 +14,19 @@ import (
 	"time"
 
 	"github.com/quic-go/quic-go"
-	"quic-transfer/internal/protocol"
+	"quicadd/internal/protocol"
 )
 
 func main() {
-	serverAddr := flag.String("server", "localhost:4433", "Address of the QUIC relay server")
+	serverAddr := flag.String("server", "localhost:4433", "Address of the quicadd relay server")
 	flag.Parse()
 
 	args := flag.Args()
 	if len(args) < 1 {
-		fmt.Println("Usage: client [-server <host:port>] <command> [args]")
+		fmt.Println("Usage: quicadd [-server <host:port>] <command> [args]")
 		fmt.Println("Commands:")
-		fmt.Println("  upload <filename>   - Host a file for direct relay")
-		fmt.Println("  download <filename> - Join a relay and download a file")
+		fmt.Println("  upload <filename>                 - Host a file for direct relay")
+		fmt.Println("  download <filename> [output_path] - Join a relay and download a file")
 		os.Exit(1)
 	}
 
@@ -34,7 +34,7 @@ func main() {
 
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true, // For self-signed certs
-		NextProtos:         []string{"quic-transfer"},
+		NextProtos:         []string{"quicadd", "quic-transfer"},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) // Only for connection phase
@@ -45,7 +45,7 @@ func main() {
 		KeepAlivePeriod: 0,
 	})
 	if err != nil {
-		log.Fatalf("Failed to connect to localhost:4433: %v", err)
+		log.Fatalf("Failed to connect to %s: %v", *serverAddr, err)
 	}
 	defer conn.CloseWithError(0, "client exit")
 

@@ -1,4 +1,4 @@
-// Package protocol defines the wire format for the quic-transfer application.
+// Package protocol defines the wire format for the quicadd application.
 //
 // Wire format (v2):
 //

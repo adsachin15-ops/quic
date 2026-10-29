@@ -11,7 +11,7 @@ RUN go mod download
 COPY . .
 
 # Build the server (embeds web UI automatically)
-RUN CGO_ENABLED=0 GOOS=linux go build -o quic-server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o quicadd-server ./cmd/server
 
 # Final stage
 FROM alpine:latest
@@ -19,13 +19,10 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy the binary from builder
-COPY --from=builder /app/quic-server .
+COPY --from=builder /app/quicadd-server .
 
 # Copy TLS certs (in production, mount these via volume)
 COPY --from=builder /app/certs ./certs
-
-# Create storage directory
-RUN mkdir -p /app/data/files
 
 # Expose ports
 # UDP 4433: QUIC binary protocol
@@ -34,4 +31,4 @@ EXPOSE 4433/udp
 EXPOSE 8443/tcp
 
 # Run the server
-CMD ["./quic-server"]
+CMD ["./quicadd-server"]

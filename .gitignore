@@ -2,6 +2,8 @@
 /server
 /client
 /quic-transfer
+/quicadd
+/quicadd-server
 
 # TLS certificates (sensitive)
 certs/

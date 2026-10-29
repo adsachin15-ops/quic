@@ -1,4 +1,4 @@
-module quic-transfer
+module quicadd
 
 go 1.27.1
 
