@@ -13,7 +13,9 @@ DOMAIN="${1:-${IP//./-}.sslip.io}"
 
 echo "==> Public IP of this machine: $IP"
 echo "==> Domain: https://$DOMAIN"
-read -r -p "Is this the VPS you want to publish? [y/N] " ok </dev/tty || ok=n
+if [ "${QUICADD_YES:-}" = 1 ]; then ok=y; else
+  read -r -p "Is this the VPS you want to publish? [y/N] " ok </dev/tty || ok=n
+fi
 [[ "$ok" =~ ^[Yy]$ ]] || { echo "Aborted. Run this script on the VPS, not your laptop."; exit 1; }
 
 # 1. Build the server and make sure backend certs exist.
