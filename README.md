@@ -84,6 +84,19 @@ docker run -p 4433:4433/udp -p 8443:8443/tcp quicadd
 
 ---
 
+## 🔗 Permanent Public URL
+
+Give the relay a fixed, browser-trusted HTTPS link (no port, no certificate warning). On the VPS, from the repo root:
+
+```bash
+sudo bash deploy/setup-permanent-url.sh              # → https://<ip-with-dashes>.sslip.io
+sudo bash deploy/setup-permanent-url.sh files.example.com   # or your own domain (A record → VPS IP)
+```
+
+This runs quicadd as a `systemd` service (restarts on crash/reboot) and puts [Caddy](https://caddyserver.com) in front with an auto-renewing Let's Encrypt certificate. TCP 80/443 (and UDP 4433 for the CLI) must be open in your cloud firewall.
+
+---
+
 ## 📁 Repository Structure
 
 ```text

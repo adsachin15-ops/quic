@@ -1,0 +1,14 @@
+[Unit]
+Description=quicadd relay server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=__APP_DIR__
+ExecStart=__APP_DIR__/quicadd-server
+Restart=always
+RestartSec=3
+User=__APP_USER__
+
+[Install]
+WantedBy=multi-user.target

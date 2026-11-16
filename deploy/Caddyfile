@@ -1,0 +1,17 @@
+# Public HTTPS front door for quicadd.
+# Caddy obtains and renews a trusted Let's Encrypt certificate automatically.
+# {$QUICADD_DOMAIN} is set by setup-permanent-url.sh (default: <ip-with-dashes>.sslip.io).
+{$QUICADD_DOMAIN} {
+	encode gzip
+
+	reverse_proxy https://127.0.0.1:8443 {
+		# Stream uploads/downloads instead of buffering (zero-storage relay).
+		flush_interval -1
+		transport http {
+			# Backend uses a self-signed cert on localhost only.
+			tls_insecure_skip_verify
+			read_timeout 0
+			write_timeout 0
+		}
+	}
+}
